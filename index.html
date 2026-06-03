@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FIFA Turnaj</title>
+<style>
+  :root {
+    --bg: #0f1722;
+    --panel: #18222f;
+    --panel-2: #1f2b3a;
+    --border: #2a3a4d;
+    --text: #e8eef5;
+    --muted: #9aa7b6;
+    --accent: #c8102e;
+    --accent-2: #ff4d63;
+    --gold: #d4af37;
+    --bronze: #cd7f32;
+    --winner: #2a4d2e;
+    --loser: #3a2230;
+    --shadow: 0 2px 8px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  a { color: var(--accent-2); }
+  .app { max-width: 1100px; margin: 0 auto; padding: 24px 18px 80px; }
+  header.top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  header.top h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
+  header.top .ball { width: 28px; height: 28px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff 0 6px, #000 7px 14px, #fff 15px 22px, #000 23px);
+    box-shadow: var(--shadow); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;
+    background: var(--panel); padding: 6px; border-radius: 12px; border: 1px solid var(--border); }
+  .tab { flex: 1 1 auto; min-width: 90px; text-align: center; padding: 10px 14px;
+    border-radius: 8px; cursor: pointer; color: var(--muted); font-weight: 600; user-select: none;
+    border: 1px solid transparent; transition: all .15s ease; }
+  .tab:hover { color: var(--text); background: var(--panel-2); }
+  .tab.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .tab.disabled { opacity: .35; cursor: not-allowed; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+    box-shadow: var(--shadow); }
+  .panel h2 { margin: 0 0 6px; font-size: 18px; }
+  .panel .sub { color: var(--muted); margin-bottom: 18px; }
+  /* Sjednocená výška inputů, selectů a tlačítek, aby v .row seděly na jedné lince. */
+  :where(input[type="text"], input[type="number"], select, button) {
+    height: 38px;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  /* label nyní: text nahoře, control dole, zarovnaný doleva; dříve byl text dole. */
+  label.field { display: flex; flex-direction: column; gap: 6px; font-size: 12px;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  label.field > input,
+  label.field > select { width: 100%; }
+  input[type="text"], input[type="number"], select {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0 10px; font: inherit; outline: none; min-width: 0;
+  }
+  input:focus, select:focus { border-color: var(--accent-2); }
+  input.invalid { border-color: var(--accent); background: #2a1820; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+    padding: 0 16px; font: inherit; font-weight: 600; cursor: pointer; transition: filter .15s;
+    display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+  button:hover { filter: brightness(1.1); }
+  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 6px; }
+  th, td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  tr.qualifier td { background: rgba(200,16,46,.08); }
+  tr.you td:first-child::before { content: ""; }
+  .rank-1 td:first-child { color: var(--gold); font-weight: 700; }
+  .rank-2 td:first-child { color: #c0c8d2; font-weight: 700; }
+  .rank-3 td:first-child { color: var(--bronze); font-weight: 700; }
+  .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
+  .pill.gold { color: var(--gold); border-color: rgba(212,175,55,.4); }
+  .pill.bronze { color: var(--bronze); border-color: rgba(205,127,50,.4); }
+  .pill.accent { color: var(--accent-2); border-color: rgba(255,77,99,.4); }
+  .empty { color: var(--muted); padding: 24px 8px; text-align: center; border: 1px dashed var(--border);
+    border-radius: 10px; margin-top: 12px; }
+  .matches { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 16px; }
+  .match { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .match .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .match .head .tag { font-size: 11px; color: var(--muted); }
+  .match .side { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .match .side .name { flex: 1; font-weight: 600; }
+  .match .side.win .name { color: #b8f0c0; }
+  .match .side.lose .name { color: #f0b8c0; opacity: .8; }
+  .match .side input.score { width: 64px; height: 32px; text-align: center; font-weight: 700; }
+  .match .foot { display: flex; gap: 8px; margin-top: 8px; }
+  .match .foot button { flex: 1; height: 36px; font-size: 14px; }
+  .match .extra { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .match .extra .row { gap: 8px; }
+  .match .extra label { font-size: 12px; color: var(--muted); }
+  .match .extra input.score { height: 32px; }
+  .round-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+    margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .round-title:first-child { margin-top: 0; }
+  /* Playoff bracket */
+  .bracket { display: flex; gap: 18px; align-items: stretch; overflow-x: auto; padding: 8px 4px 18px; }
+  .bracket-col { display: flex; flex-direction: column; justify-content: space-around; gap: 14px; min-width: 220px; }
+  .bracket-col h3 { font-size: 12px; text-align: center; color: var(--muted); text-transform: uppercase; margin: 0 0 6px; letter-spacing: .05em; }
+  .seed-pill { font-size: 10px; color: var(--muted); margin-left: 6px; }
+  .podium { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .podium .card { padding: 22px; text-align: center; border-radius: 12px; }
+  .podium .gold-card { background: linear-gradient(180deg, rgba(212,175,55,.18), rgba(212,175,55,.05));
+    border: 1px solid rgba(212,175,55,.5); }
+  .podium .bronze-card { background: linear-gradient(180deg, rgba(205,127,50,.18), rgba(205,127,50,.05));
+    border: 1px solid rgba(205,127,50,.5); }
+  .podium .trophy { font-size: 48px; }
+  .podium .name { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .podium .gold-card .name { color: var(--gold); }
+  .podium .bronze-card .name { color: var(--bronze); }
+  .podium .sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .grid-2 label.field { width: 100%; }
+  .badge-1 { background: rgba(212,175,55,.2); color: var(--gold); }
+  .badge-3 { background: rgba(205,127,50,.2); color: var(--bronze); }
+  .help { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  @media (max-width: 700px) {
+    .bracket { flex-direction: column; }
+    .bracket-col { min-width: 0; }
+    .podium { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ball" aria-hidden="true"></div>
+    <h1>FIFA Turnaj</h1>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+  <main id="view" class="panel"></main>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ *  State + persistence
+ * ------------------------------------------------------------------ */
+const STORAGE_KEY = "fifa-tournament-v1";
+
+const TABS = [
+  { id: "setup",    label: "Nastavení" },
+  { id: "schedule", label: "Rozlosování" },
+  { id: "group",    label: "Skupina" },
+  { id: "playoff",  label: "Playoff" },
+  { id: "champion", label: "Vítěz" },
+];
+
+let state = loadState();
+let currentTab = "setup";
+
+function defaultState() {
+  return {
+    phase: "setup",
+    playerCount: 4,
+    players: [],
+    groupMatches: [],
+    playoffConfig: { size: 4, bestOf: 1 },
+    qualifiers: [],
+    playoff: { qf: [], sf: [], bronze: null, final: null },
+    champion: null,
+    bronzeWinner: null,
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return Object.assign(defaultState(), parsed);
+  } catch (e) {
+    console.warn("Failed to load state, resetting.", e);
+    return defaultState();
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn("Failed to save state", e);
+  }
+}
+
+function resetTournament() {
+  if (!confirm("Resetovat celý turnaj? Smažou se všichni hráči, výsledky i pavouk.")) return;
+  state = defaultState();
+  saveState();
+  currentTab = "setup";
+  render();
+}
+
+/* ------------------------------------------------------------------ *
+ *  Round-robin schedule (circle method)
+ * ------------------------------------------------------------------ */
+function generateGroupMatches(players) {
+  const n = players.length;
+  if (n < 2) return [];
+  const list = players.slice();
+  const isOdd = n % 2 === 1;
+  if (isOdd) list.push("BYE");
+  const N = list.length;
+  const rounds = N - 1;
+  const half = N / 2;
+  const arr = list.slice();
+  const matches = [];
+  let id = 0;
+  for (let r = 0; r < rounds; r++) {
+    for (let i = 0; i < half; i++) {
+      const a = arr[i];
+      const b = arr[N - 1 - i];
+      if (a !== "BYE" && b !== "BYE") {
+        matches.push({
+          id: "g" + (id++),
+          round: r + 1,
+          p1: a, p2: b,
+          g1: null, g2: null,
+          played: false,
+        });
+      }
+    }
+    // rotate everyone except the first element
+    const fixed = arr[0];
+    const rest = arr.slice(1);
+    rest.unshift(rest.pop());
+    arr.splice(0, arr.length, fixed, ...rest);
+  }
+  return matches;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Standings
+ * ------------------------------------------------------------------ */
+function computeStandings(players, matches) {
+  const table = {};
+  players.forEach(p => { table[p] = { p, mp:0, w:0, d:0, l:0, gf:0, ga:0, gd:0, pts:0 }; });
+  matches.forEach(m => {
+    if (!m.played) return;
+    const a = table[m.p1], b = table[m.p2];
+    if (!a || !b) return;
+    a.mp++; b.mp++;
+    a.gf += m.g1; a.ga += m.g2;
+    b.gf += m.g2; b.ga += m.g1;
+    if (m.g1 > m.g2) { a.w++; a.pts += 3; b.l++; }
+    else if (m.g1 < m.g2) { b.w++; b.pts += 3; a.l++; }
+    else { a.d++; b.d++; a.pts += 1; b.pts += 1; }
+  });
+  Object.values(table).forEach(t => { t.gd = t.gf - t.ga; });
+  return Object.values(table).sort((x, y) =>
+    y.pts - x.pts || y.gd - x.gd || y.gf - x.gf || x.p.localeCompare(y.p));
+}
+
+/* ------------------------------------------------------------------ *
+ *  Playoff generation
+ * ------------------------------------------------------------------ */
+function buildPlayoff(seeds, size, bestOf) {
+  // seeds[0] is #1 qualifier, etc.
+  const out = { qf: [], sf: [], bronze: null, final: null };
+  if (size === 2) {
+    out.final = mkMatch("f1", seeds[0], seeds[1]);
+    out.bronze = mkMatch("b1", seeds[2] || null, seeds[3] || null);
+  } else if (size === 4) {
+    out.sf = [
+      mkMatch("s1", seeds[0], seeds[3]),
+      mkMatch("s2", seeds[1], seeds[2]),
+    ];
+    out.bronze = mkMatch("b1", null, null);
+    out.final = mkMatch("f1", null, null);
+  } else if (size === 6) {
+    // Top 2 get byes into SF; seeds 3..6 play a play-in QF.
+    out.qf = [
+      mkMatch("q1", seeds[2], seeds[5]),
+      mkMatch("q2", seeds[3], seeds[4]),
+    ];
+    out.sf = [
+      mkMatch("s1", seeds[0], null), // winner q1
+      mkMatch("s2", seeds[1], null), // winner q2
+    ];
+    out.bronze = mkMatch("b1", null, null);
+    out.final = mkMatch("f1", null, null);
+  } else if (size === 8) {
+    out.qf = [
+      mkMatch("q1", seeds[0], seeds[7]),
+      mkMatch("q2", seeds[1], seeds[6]),
+      mkMatch("q3", seeds[2], seeds[5]),
+      mkMatch("q4", seeds[3], seeds[4]),
+    ];
+    out.sf = [
+      mkMatch("s1", null, null), // winners q1, q2
+      mkMatch("s2", null, null), // winners q3, q4
+    ];
+    out.bronze = mkMatch("b1", null, null);
+    out.final = mkMatch("f1", null, null);
+  }
+  out.bestOf = bestOf;
+  return out;
+}
+
+function mkMatch(id, a, b) {
+  return { id, a, b, g1: null, g2: null, ot1: 0, ot2: 0, penWinner: null, played: false };
+}
+
+function findMatch(p, id) {
+  if (!p) return null;
+  if (id === "f1") return p.final;
+  if (id === "b1") return p.bronze;
+  if (id && id.startsWith("q")) return p.qf.find(m => m.id === id);
+  if (id && id.startsWith("s")) return p.sf.find(m => m.id === id);
+  return null;
+}
+
+function matchWinner(m) {
+  if (!m || !m.played) return null;
+  const total1 = (m.g1 || 0) + (m.ot1 || 0);
+  const total2 = (m.g2 || 0) + (m.ot2 || 0);
+  if (total1 > total2) return m.a;
+  if (total2 > total1) return m.b;
+  if (m.penWinner === 1) return m.a;
+  if (m.penWinner === 2) return m.b;
+  return null;
+}
+
+function matchLoser(m) {
+  const w = matchWinner(m);
+  if (!w) return null;
+  return w === m.a ? m.b : m.a;
+}
+
+function advancePlayoff() {
+  // Walk the bracket and propagate winners forward.
+  const p = state.playoff;
+  const configSize = state.playoffConfig.size;
+  if (configSize === 2) {
+    // nothing to advance
+  } else if (configSize === 4) {
+    const w1 = matchWinner(p.sf[0]); const w2 = matchWinner(p.sf[1]);
+    const l1 = matchLoser(p.sf[0]); const l2 = matchLoser(p.sf[1]);
+    if (w1 && w2) { p.final.a = w1; p.final.b = w2; }
+    if (l1 && l2) { p.bronze.a = l1; p.bronze.b = l2; }
+  } else if (configSize === 6) {
+    const q1w = matchWinner(p.qf[0]); const q2w = matchWinner(p.qf[1]);
+    if (q1w) p.sf[0].b = q1w;
+    if (q2w) p.sf[1].b = q2w;
+    const w1 = matchWinner(p.sf[0]); const w2 = matchWinner(p.sf[1]);
+    const l1 = matchLoser(p.sf[0]); const l2 = matchLoser(p.sf[1]);
+    if (w1 && w2) { p.final.a = w1; p.final.b = w2; }
+    if (l1 && l2) { p.bronze.a = l1; p.bronze.b = l2; }
+  } else if (configSize === 8) {
+    if (matchWinner(p.qf[0])) p.sf[0].a = matchWinner(p.qf[0]);
+    if (matchWinner(p.qf[1])) p.sf[0].b = matchWinner(p.qf[1]);
+    if (matchWinner(p.qf[2])) p.sf[1].a = matchWinner(p.qf[2]);
+    if (matchWinner(p.qf[3])) p.sf[1].b = matchWinner(p.qf[3]);
+    const w1 = matchWinner(p.sf[0]); const w2 = matchWinner(p.sf[1]);
+    const l1 = matchLoser(p.sf[0]); const l2 = matchLoser(p.sf[1]);
+    if (w1 && w2) { p.final.a = w1; p.final.b = w2; }
+    if (l1 && l2) { p.bronze.a = l1; p.bronze.b = l2; }
+  }
+  // Crown
+  if (p.final && p.final.played) {
+    state.champion = matchWinner(p.final);
+  }
+  if (p.bronze && p.bronze.played) {
+    state.bronzeWinner = matchWinner(p.bronze);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  Helpers
+ * ------------------------------------------------------------------ */
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    for (const k in attrs) {
+      if (k === "class") e.className = attrs[k];
+      else if (k === "style") e.setAttribute("style", attrs[k]);
+      else if (k.startsWith("on") && typeof attrs[k] === "function") e.addEventListener(k.slice(2), attrs[k]);
+      else if (k === "html") e.innerHTML = attrs[k];
+      else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k]);
+    }
+  }
+  if (children != null) {
+    (Array.isArray(children) ? children : [children]).forEach(c => {
+      if (c == null || c === false) return;
+      e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    });
+  }
+  return e;
+}
+
+function parseScoreInput(v) {
+  if (v === "" || v == null) return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0 || Math.floor(n) !== n) return NaN;
+  return n;
+}
+
+function tabEnabled(id) {
+  if (id === "setup") return true;
+  if (!state.players.length) return false;
+  if (id === "schedule" || id === "group") return state.groupMatches.length > 0;
+  if (id === "playoff") return state.groupMatches.some(m => m.played);
+  if (id === "champion") return !!state.champion;
+  return false;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Render
+ * ------------------------------------------------------------------ */
+function render() {
+  // tabs
+  const tabsEl = document.getElementById("tabs");
+  tabsEl.innerHTML = "";
+  TABS.forEach(t => {
+    const enabled = tabEnabled(t.id);
+    const cls = "tab" + (t.id === currentTab ? " active" : "") + (!enabled ? " disabled" : "");
+    const node = el("div", { class: cls, role: "tab" }, t.label);
+    node.addEventListener("click", () => {
+      if (!enabled) return;
+      currentTab = t.id;
+      render();
+    });
+    tabsEl.appendChild(node);
+  });
+
+  const view = document.getElementById("view");
+  view.innerHTML = "";
+  if (currentTab === "setup") renderSetup(view);
+  else if (currentTab === "schedule") renderSchedule(view);
+  else if (currentTab === "group") renderGroup(view);
+  else if (currentTab === "playoff") renderPlayoff(view);
+  else if (currentTab === "champion") renderChampion(view);
+}
+
+function renderSetup(view) {
+  const started = state.players.length > 0;
+  view.appendChild(el("h2", null, "Nastavení turnaje"));
+  view.appendChild(el("div", { class: "sub" }, "Zvol počet hráčů (4–12), zadej jejich jména a spusť turnaj."));
+  const row = el("div", { class: "row" });
+  const countInput = el("input", { type: "number", min: "4", max: "12", value: state.playerCount });
+  countInput.addEventListener("change", () => {
+    let n = parseInt(countInput.value, 10);
+    if (!Number.isFinite(n)) n = 4;
+    n = Math.max(4, Math.min(12, n));
+    state.playerCount = n;
+    state.players = state.players.slice(0, n);
+    while (state.players.length < n) state.players.push("");
+    saveState();
+    render();
+  });
+  row.appendChild(el("label", { class: "field", style: "min-width:160px" }, ["Počet hráčů (4–12)", countInput]));
+  view.appendChild(row);
+
+  const names = el("div", { class: "grid-2", style: "margin-top:18px" });
+  for (let i = 0; i < state.playerCount; i++) {
+    const inp = el("input", { type: "text", placeholder: "Hráč " + (i+1), value: state.players[i] || "" });
+    inp.addEventListener("input", () => {
+      state.players[i] = inp.value;
+      saveState();
+    });
+    names.appendChild(el("label", { class: "field" }, ["Hráč " + (i+1), inp]));
+  }
+  view.appendChild(names);
+
+  const cta = el("div", { class: "row", style: "margin-top:20px" });
+  if (!started) {
+    const btn = el("button", null, "Spustit turnaj");
+    btn.addEventListener("click", () => {
+      const clean = state.players.map(p => (p || "").trim());
+      if (clean.some(p => !p)) { alert("Vyplň prosím jména všech hráčů."); return; }
+      if (new Set(clean).size !== clean.length) { alert("Jména hráčů se nesmí opakovat."); return; }
+      state.players = clean;
+      state.groupMatches = generateGroupMatches(clean);
+      state.phase = "group";
+      state.qualifiers = [];
+      state.playoff = { qf: [], sf: [], bronze: null, final: null };
+      state.champion = null;
+      state.bronzeWinner = null;
+      saveState();
+      currentTab = "schedule";
+      render();
+    });
+    cta.appendChild(btn);
+  } else {
+    const regen = el("button", { class: "secondary" }, "Vygenerovat rozlosování znovu");
+    regen.addEventListener("click", () => {
+      if (!confirm("Tímto se vymažou všechny výsledky zápasů ve skupině. Pokračovat?")) return;
+      const clean = state.players.map(p => (p || "").trim());
+      if (clean.some(p => !p)) { alert("Nejdříve vyplň všechna jména hráčů."); return; }
+      state.players = clean;
+      state.groupMatches = generateGroupMatches(clean);
+      state.qualifiers = [];
+      state.playoff = { qf: [], sf: [], bronze: null, final: null };
+      state.champion = null;
+      state.bronzeWinner = null;
+      saveState();
+      currentTab = "schedule";
+      render();
+    });
+    cta.appendChild(regen);
+  }
+  const reset = el("button", { class: "ghost" }, "Resetovat turnaj");
+  reset.addEventListener("click", resetTournament);
+  cta.appendChild(reset);
+  view.appendChild(cta);
+}
+
+function renderSchedule(view) {
+  view.appendChild(el("h2", null, "Rozlosování zápasů"));
+  view.appendChild(el("div", { class: "sub" }, state.groupMatches.length + " zápasů ve skupině v " +
+    (state.groupMatches.length ? state.groupMatches[state.groupMatches.length-1].round : 0) + " kolech."));
+
+  if (!state.groupMatches.length) {
+    view.appendChild(el("div", { class: "empty" }, "Zatím žádné rozlosování. Jdi do Nastavení a spusť turnaj."));
+    return;
+  }
+  const byRound = {};
+  state.groupMatches.forEach(m => { (byRound[m.round] = byRound[m.round] || []).push(m); });
+  Object.keys(byRound).map(Number).sort((a,b) => a-b).forEach(r => {
+    view.appendChild(el("div", { class: "round-title" }, "Kolo " + r));
+    const grid = el("div", { class: "matches" });
+    byRound[r].forEach(m => grid.appendChild(scheduleMatchCard(m)));
+    view.appendChild(grid);
+  });
+}
+
+function scheduleMatchCard(m) {
+  const card = el("div", { class: "match" });
+  card.appendChild(el("div", { class: "head" }, [
+    el("span", { class: "tag" }, "Zápas " + m.id.slice(1)),
+    el("span", { class: "pill" }, m.played ? (m.g1 + " : " + m.g2) : "Nadcházející"),
+  ]));
+  card.appendChild(el("div", { class: "side" }, [
+    el("span", { class: "name" }, m.p1),
+  ]));
+  card.appendChild(el("div", { class: "side" }, [
+    el("span", { class: "name" }, m.p2),
+  ]));
+  return card;
+}
+
+function renderGroup(view) {
+  const standings = computeStandings(state.players, state.groupMatches);
+  const playedCount = state.groupMatches.filter(m => m.played).length;
+
+  view.appendChild(el("h2", null, "Skupinová fáze"));
+  view.appendChild(el("div", { class: "sub" }, "Každý s každým, odehráno " + playedCount + " / " + state.groupMatches.length + " zápasů."));
+  view.appendChild(el("h3", { style: "margin: 6px 0 6px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Tabulka"));
+
+  const tbl = el("table");
+  tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
+  const tbody = el("tbody");
+  standings.forEach((row, i) => {
+    const tr = el("tr", { class: (i < state.playoffConfig.size ? "qualifier " : "") + (i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "") });
+    tr.appendChild(el("td", null, String(i+1)));
+    tr.appendChild(el("td", { style: "text-align:left; font-weight:600" }, row.p));
+    tr.appendChild(el("td", null, String(row.mp)));
+    tr.appendChild(el("td", null, String(row.w)));
+    tr.appendChild(el("td", null, String(row.d)));
+    tr.appendChild(el("td", null, String(row.l)));
+    tr.appendChild(el("td", null, String(row.gf)));
+    tr.appendChild(el("td", null, String(row.ga)));
+    tr.appendChild(el("td", null, (row.gd > 0 ? "+" : "") + row.gd));
+    tr.appendChild(el("td", { style: "font-weight:700" }, String(row.pts)));
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  view.appendChild(tbl);
+  view.appendChild(el("div", { class: "help" }, "Do playoff postupuje nejlepších " + state.playoffConfig.size + ". Remízy jsou ve skupině povoleny."));
+
+  view.appendChild(el("h3", { style: "margin: 22px 0 6px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Zápasy"));
+  if (!state.groupMatches.length) {
+    view.appendChild(el("div", { class: "empty" }, "Zatím žádné zápasy."));
+    return;
+  }
+  const byRound = {};
+  state.groupMatches.forEach(m => { (byRound[m.round] = byRound[m.round] || []).push(m); });
+  Object.keys(byRound).map(Number).sort((a,b) => a-b).forEach(r => {
+    view.appendChild(el("div", { class: "round-title" }, "Kolo " + r));
+    const grid = el("div", { class: "matches" });
+    byRound[r].forEach(m => grid.appendChild(groupMatchCard(m)));
+    view.appendChild(grid);
+  });
+}
+
+function groupMatchCard(m) {
+  const card = el("div", { class: "match" });
+  card.appendChild(el("div", { class: "head" }, [
+    el("span", { class: "tag" }, "Zápas " + m.id.slice(1)),
+    el("span", { class: "pill" }, m.played ? "Odehráno" : "Čeká se"),
+  ]));
+
+  const g1 = el("input", { type: "number", min: "0", class: "score", value: m.played ? String(m.g1) : "" });
+  const g2 = el("input", { type: "number", min: "0", class: "score", value: m.played ? String(m.g2) : "" });
+  const s1 = el("div", { class: "side" }, [el("span", { class: "name" }, m.p1), g1]);
+  const s2 = el("div", { class: "side" }, [el("span", { class: "name" }, m.p2), g2]);
+  card.appendChild(s1);
+  card.appendChild(s2);
+
+  const save = el("button", null, m.played ? "Aktualizovat" : "Uložit výsledek");
+  const clr  = el("button", { class: "ghost" }, "Smazat");
+  const foot = el("div", { class: "foot" }, [save, clr]);
+  card.appendChild(foot);
+
+  save.addEventListener("click", () => {
+    const v1 = parseScoreInput(g1.value);
+    const v2 = parseScoreInput(g2.value);
+    [g1, g2].forEach(i => i.classList.remove("invalid"));
+    if (v1 == null || v2 == null) {
+      [g1, g2].forEach(i => { if (parseScoreInput(i.value) == null) i.classList.add("invalid"); });
+      return;
+    }
+    m.g1 = v1; m.g2 = v2; m.played = true;
+    saveState(); render();
+  });
+  clr.addEventListener("click", () => {
+    m.g1 = null; m.g2 = null; m.played = false;
+    saveState(); render();
+  });
+  return card;
+}
+
+function renderPlayoff(view) {
+  view.appendChild(el("h2", null, "Playoff"));
+  const standings = computeStandings(state.players, state.groupMatches);
+  const allPlayed = state.groupMatches.every(m => m.played);
+  const canGenerate = standings.length >= 2;
+  view.appendChild(el("div", { class: "sub" }, allPlayed
+    ? "Všechny zápasy ve skupině jsou odehrány. Vytvoř pavouka a dobojuj turnaj!"
+    : "Pavouka můžeš vytvořit už teď podle aktuální tabulky, ale po odehrání zbývajících zápasů se nasazení může změnit."));
+
+  // Config
+  const cfg = state.playoffConfig;
+  const sizeSel = el("select");
+  [2,4,6,8].forEach(n => {
+    const opt = el("option", { value: String(n) }, "Nejlepších " + n);
+    if (cfg.size === n) opt.selected = true;
+    sizeSel.appendChild(opt);
+  });
+  sizeSel.addEventListener("change", () => { cfg.size = parseInt(sizeSel.value, 10); saveState(); render(); });
+  const boSel = el("select");
+  [{v:1, l:"Jeden zápas"}, {v:3, l:"Na 2 vítězné (Bo3)"}].forEach(o => {
+    const opt = el("option", { value: String(o.v) }, o.l);
+    if (cfg.bestOf === o.v) opt.selected = true;
+    boSel.appendChild(opt);
+  });
+  boSel.addEventListener("change", () => { cfg.bestOf = parseInt(boSel.value, 10); saveState(); render(); });
+
+  const gen = el("button", null, (state.playoff.final || state.playoff.sf.length) ? "Vygenerovat pavouka znovu" : "Vygenerovat pavouka");
+  gen.disabled = !canGenerate;
+  gen.addEventListener("click", () => {
+    if (state.playoff.final || state.playoff.sf.length || state.playoff.qf.length) {
+      if (!confirm("Vygenerováním se vymažou aktuální výsledky playoff. Pokračovat?")) return;
+    }
+    const seeds = standings.slice(0, cfg.size).map(r => r.p);
+    state.qualifiers = seeds;
+    state.playoff = buildPlayoff(seeds, cfg.size, cfg.bestOf);
+    saveState(); render();
+  });
+
+  const cfgRow = el("div", { class: "row" }, [
+    el("label", { class: "field" }, ["Velikost pavouka", sizeSel]),
+    el("label", { class: "field" }, ["Formát", boSel]),
+    gen,
+  ]);
+  view.appendChild(cfgRow);
+
+  if (!state.qualifiers.length) {
+    view.appendChild(el("div", { class: "empty" }, "Pavouk zatím není. Klikni na „Vygenerovat pavouka\" výše."));
+    return;
+  }
+
+  // Bracket columns
+  const cfgSize = state.playoffConfig.size;
+  const bracket = el("div", { class: "bracket" });
+
+  if (cfgSize === 2) {
+    bracket.appendChild(bracketCol("Finále", [state.playoff.final]));
+    bracket.appendChild(bracketCol("Zápas o 3. místo", [state.playoff.bronze]));
+  } else if (cfgSize === 4) {
+    bracket.appendChild(bracketCol("Semifinále", state.playoff.sf));
+    bracket.appendChild(bracketCol("Finále", [state.playoff.final]));
+    bracket.appendChild(bracketCol("Zápas o 3. místo", [state.playoff.bronze]));
+  } else if (cfgSize === 6) {
+    bracket.appendChild(bracketCol("Předkolo", state.playoff.qf));
+    bracket.appendChild(bracketCol("Semifinále", state.playoff.sf));
+    bracket.appendChild(bracketCol("Finále", [state.playoff.final]));
+    bracket.appendChild(bracketCol("Zápas o 3. místo", [state.playoff.bronze]));
+  } else if (cfgSize === 8) {
+    bracket.appendChild(bracketCol("Čtvrtfinále", state.playoff.qf));
+    bracket.appendChild(bracketCol("Semifinále", state.playoff.sf));
+    bracket.appendChild(bracketCol("Finále", [state.playoff.final]));
+    bracket.appendChild(bracketCol("Zápas o 3. místo", [state.playoff.bronze]));
+  }
+  view.appendChild(bracket);
+
+  // Quick crown if everything done
+  if (state.champion) {
+    const note = el("div", { class: "row", style: "margin-top:8px" }, [
+      el("span", { class: "pill gold" }, "Vítěz: " + state.champion),
+      el("span", { class: "pill bronze" }, "3. místo: " + (state.bronzeWinner || "neurčeno")),
+    ]);
+    view.appendChild(note);
+  }
+}
+
+function bracketCol(title, matches) {
+  const col = el("div", { class: "bracket-col" });
+  col.appendChild(el("h3", null, title));
+  matches.forEach(m => col.appendChild(playoffMatchCard(m)));
+  return col;
+}
+
+function playoffMatchCard(m) {
+  if (!m) return el("div");
+  const card = el("div", { class: "match" });
+  const tag = m.id === "f1" ? "Finále" : m.id === "b1" ? "O 3. místo" :
+              m.id.startsWith("s") ? "SF" : m.id.startsWith("q") ? "ČF" : "Zápas";
+  const isBronze = m.id === "b1";
+  const winner = matchWinner(m);
+  const loser  = matchLoser(m);
+
+  card.appendChild(el("div", { class: "head" }, [
+    el("span", { class: "tag" }, tag),
+    el("span", { class: "pill" }, m.played ? "Odehráno" : (m.a && m.b ? "Čeká se" : "Bude určeno")),
+  ]));
+
+  // Sides
+  const s1 = el("div", { class: "side" + (winner === m.a ? " win" : loser === m.a ? " lose" : "") });
+  s1.appendChild(el("span", { class: "name" }, m.a || "Bude určeno"));
+  const g1 = el("input", { type: "number", min: "0", class: "score" });
+  g1.value = m.played ? String(m.g1) : "";
+  g1.disabled = !m.a || !m.b;
+  s1.appendChild(g1);
+  card.appendChild(s1);
+
+  const s2 = el("div", { class: "side" + (winner === m.b ? " win" : loser === m.b ? " lose" : "") });
+  s2.appendChild(el("span", { class: "name" }, m.b || "Bude určeno"));
+  const g2 = el("input", { type: "number", min: "0", class: "score" });
+  g2.value = m.played ? String(m.g2) : "";
+  g2.disabled = !m.a || !m.b;
+  s2.appendChild(g2);
+  card.appendChild(s2);
+
+  // Extra (overtime + penalties) — only if both players and the regular score is a draw
+  const extra = el("div", { class: "extra", style: "display:none" });
+  const ot1 = el("input", { type: "number", min: "0", class: "score", value: String(m.ot1 || 0) });
+  const ot2 = el("input", { type: "number", min: "0", class: "score", value: String(m.ot2 || 0) });
+  const otRow = el("div", { class: "row" }, [
+    el("label", { class: "field" }, ["Prodloužení (A)", ot1]),
+    el("label", { class: "field" }, ["Prodloužení (B)", ot2]),
+  ]);
+  extra.appendChild(otRow);
+
+  const penRow = el("div", { class: "row", style: "margin-top:6px" });
+  const penA = el("label", null, [el("input", { type: "radio", name: "pen-" + m.id, value: "1" }), " Penalty: " + (m.a || "A")]);
+  const penB = el("label", null, [el("input", { type: "radio", name: "pen-" + m.id, value: "2" }), " Penalty: " + (m.b || "B")]);
+  if (m.penWinner === 1) penA.firstChild.checked = true;
+  if (m.penWinner === 2) penB.firstChild.checked = true;
+  penRow.appendChild(penA);
+  penRow.appendChild(penB);
+  extra.appendChild(penRow);
+  card.appendChild(extra);
+
+  function maybeShowExtra() {
+    const v1 = parseScoreInput(g1.value);
+    const v2 = parseScoreInput(g2.value);
+    if (v1 == null || v2 == null) { extra.style.display = "none"; return false; }
+    const tied = v1 === v2;
+    extra.style.display = tied ? "block" : "none";
+    return tied;
+  }
+  g1.addEventListener("input", maybeShowExtra);
+  g2.addEventListener("input", maybeShowExtra);
+  if (m.played) maybeShowExtra();
+
+  // Save
+  const save = el("button", null, m.played ? "Aktualizovat" : "Uložit výsledek");
+  const clr  = el("button", { class: "ghost" }, "Smazat");
+  const foot = el("div", { class: "foot" }, [save, clr]);
+  card.appendChild(foot);
+
+  save.addEventListener("click", () => {
+    [g1, g2].forEach(i => i.classList.remove("invalid"));
+    if (!m.a || !m.b) return;
+    const v1 = parseScoreInput(g1.value);
+    const v2 = parseScoreInput(g2.value);
+    if (v1 == null || v2 == null) {
+      [g1, g2].forEach(i => { if (parseScoreInput(i.value) == null) i.classList.add("invalid"); });
+      return;
+    }
+    let total1 = v1, total2 = v2, otv1 = 0, otv2 = 0, penW = null;
+    if (v1 === v2) {
+      otv1 = Math.max(0, parseInt(ot1.value, 10) || 0);
+      otv2 = Math.max(0, parseInt(ot2.value, 10) || 0);
+      total1 += otv1; total2 += otv2;
+      if (total1 === total2) {
+        // Shootout required
+        const r = penRow.querySelector("input[type=radio]:checked");
+        if (!r) { alert("Pokud prodloužení nerozhodne, je nutné vybrat vítěze penalty."); return; }
+        penW = parseInt(r.value, 10);
+      }
+    }
+    m.g1 = v1; m.g2 = v2;
+    m.ot1 = otv1; m.ot2 = otv2;
+    m.penWinner = penW;
+    m.played = true;
+    advancePlayoff();
+    saveState(); render();
+  });
+  clr.addEventListener("click", () => {
+    m.g1 = null; m.g2 = null; m.ot1 = 0; m.ot2 = 0; m.penWinner = null; m.played = false;
+    advancePlayoff();
+    saveState(); render();
+  });
+
+  // Style hint
+  if (isBronze && m.played) card.style.borderColor = "rgba(205,127,50,.4)";
+  return card;
+}
+
+function renderChampion(view) {
+  view.appendChild(el("h2", null, "Vítěz turnaje"));
+  if (!state.champion) {
+    view.appendChild(el("div", { class: "empty" }, "Turnaj ještě neskončil. Odehraj finále a máme vítěze."));
+    return;
+  }
+  const podium = el("div", { class: "podium" });
+  podium.appendChild(el("div", { class: "card gold-card" }, [
+    el("div", { class: "sub" }, "1. místo"),
+    el("div", { class: "trophy" }, "🏆"),
+    el("div", { class: "name" }, state.champion),
+  ]));
+  podium.appendChild(el("div", { class: "card bronze-card" }, [
+    el("div", { class: "sub" }, "3. místo"),
+    el("div", { class: "trophy" }, "🥉"),
+    el("div", { class: "name" }, state.bronzeWinner || "—"),
+  ]));
+  view.appendChild(podium);
+
+  // Top-4 summary
+  const standings = computeStandings(state.players, state.groupMatches);
+  if (standings.length) {
+    view.appendChild(el("h3", { style: "margin-top:24px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Konečné pořadí"));
+    const tbl = el("table");
+    tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
+    const tb = el("tbody");
+    standings.forEach((r, i) => {
+      const tr = el("tr", { class: i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "" });
+      tr.appendChild(el("td", null, String(i+1)));
+      tr.appendChild(el("td", { style: "text-align:left; font-weight:600" }, r.p));
+      tr.appendChild(el("td", null, String(r.mp)));
+      tr.appendChild(el("td", null, String(r.w)));
+      tr.appendChild(el("td", null, String(r.d)));
+      tr.appendChild(el("td", null, String(r.l)));
+      tr.appendChild(el("td", null, String(r.gf)));
+      tr.appendChild(el("td", null, String(r.ga)));
+      tr.appendChild(el("td", null, (r.gd > 0 ? "+" : "") + r.gd));
+      tr.appendChild(el("td", { style: "font-weight:700" }, String(r.pts)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    view.appendChild(tbl);
+  }
+
+  const row = el("div", { class: "row", style: "margin-top:18px" });
+  const again = el("button", null, "Nový turnaj");
+  again.addEventListener("click", resetTournament);
+  row.appendChild(again);
+  view.appendChild(row);
+}
+
+// Boot
+render();
+</script>
+</body>
+</html>
