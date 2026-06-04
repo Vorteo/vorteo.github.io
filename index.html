@@ -79,6 +79,8 @@
   .pill.gold { color: var(--gold); border-color: rgba(212,175,55,.4); }
   .pill.bronze { color: var(--bronze); border-color: rgba(205,127,50,.4); }
   .pill.accent { color: var(--accent-2); border-color: rgba(255,77,99,.4); }
+  .pill.team { color: var(--accent-2); border-color: rgba(255,77,99,.4);
+    font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
   .empty { color: var(--muted); padding: 24px 8px; text-align: center; border: 1px dashed var(--border);
     border-radius: 10px; margin-top: 12px; }
   .matches { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 16px; }
@@ -117,6 +119,42 @@
   .podium .sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
   .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .grid-2 label.field { width: 100%; }
+  /* Wheel of fortune */
+  .wheel-wrap { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 24px;
+    align-items: start; margin-top: 22px; padding-top: 22px; border-top: 1px dashed var(--border); }
+  .wheel-stage { position: relative; aspect-ratio: 1; max-width: 360px; width: 100%;
+    justify-self: center; }
+  .wheel-svg { width: 100%; height: 100%; display: block; transform: rotate(0deg);
+    transition: transform 4.8s cubic-bezier(.17,.67,.12,.99); will-change: transform; }
+  .wheel-pointer { position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent;
+    border-top: 22px solid var(--accent-2); filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); z-index: 2; }
+  .wheel-hub { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 26px; height: 26px; border-radius: 50%; background: var(--panel);
+    border: 2px solid var(--accent-2); z-index: 1; }
+  .wheel-side h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .04em; }
+  .wheel-side .sub { margin-bottom: 14px; }
+  .wheel-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px;
+    align-items: end; margin-bottom: 14px; }
+  .wheel-form label.field { min-width: 0; }
+  .wheel-form button { min-width: 110px; }
+  .wheel-list { list-style: none; padding: 0; margin: 0 0 14px; max-height: 220px; overflow: auto;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
+  .wheel-list li { display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .wheel-list li:last-child { border-bottom: 0; }
+  .wheel-list li > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wheel-list li .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+  .wheel-list li button { flex: 0 0 auto; height: 28px; padding: 0 10px; font-size: 12px; }
+  .wheel-empty { color: var(--muted); padding: 12px; font-size: 13px; }
+  .wheel-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 2px; }
+  .wheel-actions button { min-width: 118px; }
+  .wheel-toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: var(--accent); color: #fff; padding: 12px 18px; border-radius: 10px; font-weight: 700;
+    box-shadow: 0 6px 24px rgba(0,0,0,.45); opacity: 0; transition: opacity .25s, transform .25s;
+    z-index: 10; pointer-events: none; }
+  .wheel-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .badge-1 { background: rgba(212,175,55,.2); color: var(--gold); }
   .badge-3 { background: rgba(205,127,50,.2); color: var(--bronze); }
   .help { font-size: 12px; color: var(--muted); margin-top: 6px; }
@@ -125,6 +163,10 @@
     .bracket { flex-direction: column; }
     .bracket-col { min-width: 0; }
     .podium { grid-template-columns: 1fr; }
+    .wheel-wrap { grid-template-columns: 1fr; gap: 18px; }
+    .wheel-form { grid-template-columns: 1fr; }
+    .wheel-form button,
+    .wheel-actions button { width: 100%; }
   }
 </style>
 </head>
@@ -137,6 +179,7 @@
   <nav class="tabs" id="tabs"></nav>
   <main id="view" class="panel"></main>
 </div>
+<div id="wheelToast" class="wheel-toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
@@ -176,7 +219,12 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    return Object.assign(defaultState(), parsed);
+    const merged = Object.assign(defaultState(), parsed);
+    // Migrate legacy `players: string[]` to `players: {name, team}[]`.
+    if (merged.players.length && typeof merged.players[0] === "string") {
+      merged.players = merged.players.map(name => ({ name, team: "" }));
+    }
+    return merged;
   } catch (e) {
     console.warn("Failed to load state, resetting.", e);
     return defaultState();
@@ -197,6 +245,95 @@ function resetTournament() {
   saveState();
   currentTab = "setup";
   render();
+}
+
+/* ------------------------------------------------------------------ *
+ *  Wheel of fortune
+ * ------------------------------------------------------------------ */
+const WHEEL_KEY = "fifa-tournament-wheel-v1";
+const WHEEL_COLORS = ["#c8102e", "#1f6feb", "#2e8b57", "#d4af37", "#7d3c98", "#cd7f32", "#117a65", "#a04000", "#1f3a93", "#76448a"];
+
+function loadWheel() {
+  try {
+    const raw = localStorage.getItem(WHEEL_KEY);
+    if (!raw) return { teams: [], rotation: 0, spinning: false };
+    const parsed = JSON.parse(raw);
+    const merged = Object.assign({ teams: [], rotation: 0, spinning: false }, parsed);
+    merged.spinning = false;
+    return merged;
+  } catch (e) { return { teams: [], rotation: 0, spinning: false }; }
+}
+function saveWheel() {
+  try { localStorage.setItem(WHEEL_KEY, JSON.stringify(wheelState)); } catch (e) {}
+}
+let wheelState = loadWheel();
+
+function wheelAddTeam(name) {
+  const t = (name || "").trim();
+  if (!t) return false;
+  if (wheelState.teams.some(x => x.name.toLowerCase() === t.toLowerCase())) return false;
+  wheelState.teams.push({ name: t, color: WHEEL_COLORS[(wheelState.teams.length) % WHEEL_COLORS.length] });
+  saveWheel();
+  return true;
+}
+function wheelRemoveTeam(idx) {
+  wheelState.teams.splice(idx, 1);
+  saveWheel();
+}
+
+// Vypočítá index výherce (slicu, na kterou ukazuje ukazatel nahoře) z aktuálního natočení kola.
+// Ukazatel je v 0° (= nahoře). Slice 0 začíná v 0° a roste po směru hodin. Rotace v SVG je CW (kladná).
+function wheelWinnerIndex(rotation, teamCount) {
+  const n = teamCount || wheelState.teams.length;
+  if (!n) return -1;
+  const sliceAngle = 360 / n;
+  // Kde aktuálně "ukazuje" ukazatel po aplikaci rotace? V SVG rotujeme CW, takže slice, jehož
+  // střed leží v bodě (360 - rot) % 360. Vydělíme sliceAngle a zaokrouhlíme dolů.
+  const norm = (((rotation == null ? wheelState.rotation : rotation) % 360) + 360) % 360;
+  const pointerAngle = (360 - norm) % 360;
+  return Math.floor(pointerAngle / sliceAngle) % n;
+}
+
+function showWheelToast(text) {
+  const t = document.getElementById("wheelToast");
+  t.textContent = text;
+  t.classList.add("show");
+  clearTimeout(showWheelToast._h);
+  showWheelToast._h = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function wheelSpin() {
+  if (wheelState.spinning) return;
+  const n = wheelState.teams.length;
+  if (n < 1) { showWheelToast("Přidej aspoň jeden tým."); return; }
+
+  wheelState.spinning = true;
+  const sliceAngle = 360 / n;
+  const targetIdx = Math.floor(Math.random() * n);
+  const targetCenter = targetIdx * sliceAngle + sliceAngle / 2;
+  const desiredNorm = (360 - targetCenter) % 360;
+  const currentNorm = ((wheelState.rotation % 360) + 360) % 360;
+  const delta = (desiredNorm - currentNorm + 360) % 360;
+  const spins = 5 + Math.floor(Math.random() * 4);
+  wheelState.rotation += spins * 360 + delta;
+  saveWheel();
+
+  // Aplikuj na DOM; CSS transition zajistí samotné zpomalení kola.
+  const svg = document.querySelector(".wheel-svg");
+  if (svg) {
+    svg.style.transform = "rotate(" + wheelState.rotation + "deg)";
+  }
+
+  clearTimeout(wheelSpin._t);
+  wheelSpin._t = setTimeout(() => {
+    const idx = wheelWinnerIndex(wheelState.rotation, n);
+    const winner = wheelState.teams[idx];
+    wheelState.teams.splice(idx, 1);
+    wheelState.spinning = false;
+    saveWheel();
+    render();
+    if (winner) showWheelToast("Vybraný tým: " + winner.name);
+  }, 4900);
 }
 
 /* ------------------------------------------------------------------ *
@@ -403,6 +540,23 @@ function parseScoreInput(v) {
   return n;
 }
 
+// Vrátí objekt hráče {name, team} pro dané jméno, nebo null.
+function getPlayer(name) {
+  if (!name) return null;
+  const p = state.players.find(x => (x.name || x) === name);
+  if (!p) return null;
+  return typeof p === "string" ? { name: p, team: "" } : p;
+}
+
+// Vloží do `parent` uzel se jménem a volitelnou "týmovou" pillou.
+function appendPlayerName(parent, name) {
+  parent.appendChild(el("span", { class: "name" }, name || "Bude určeno"));
+  const t = getPlayer(name);
+  if (t && t.team) {
+    parent.appendChild(el("span", { class: "pill team" }, t.team));
+  }
+}
+
 function tabEnabled(id) {
   if (id === "setup") return true;
   if (!state.players.length) return false;
@@ -451,8 +605,9 @@ function renderSetup(view) {
     if (!Number.isFinite(n)) n = 4;
     n = Math.max(4, Math.min(12, n));
     state.playerCount = n;
-    state.players = state.players.slice(0, n);
-    while (state.players.length < n) state.players.push("");
+    const cur = state.players.map(p => typeof p === "string" ? { name: p, team: "" } : (p || { name: "", team: "" }));
+    state.players = cur.slice(0, n);
+    while (state.players.length < n) state.players.push({ name: "", team: "" });
     saveState();
     render();
   });
@@ -461,24 +616,38 @@ function renderSetup(view) {
 
   const names = el("div", { class: "grid-2", style: "margin-top:18px" });
   for (let i = 0; i < state.playerCount; i++) {
-    const inp = el("input", { type: "text", placeholder: "Hráč " + (i+1), value: state.players[i] || "" });
-    inp.addEventListener("input", () => {
-      state.players[i] = inp.value;
+    const p = state.players[i] || { name: "", team: "" };
+    const nameInp = el("input", { type: "text", placeholder: "Hráč " + (i+1), value: p.name || "" });
+    const teamInp = el("input", { type: "text", placeholder: "Tým (volitelné)", value: p.team || "" });
+    nameInp.addEventListener("input", () => {
+      state.players[i] = { name: nameInp.value, team: teamInp.value };
       saveState();
     });
-    names.appendChild(el("label", { class: "field" }, ["Hráč " + (i+1), inp]));
+    teamInp.addEventListener("input", () => {
+      state.players[i] = { name: nameInp.value, team: teamInp.value };
+      saveState();
+    });
+    const cell = el("div", { class: "row" });
+    cell.appendChild(el("label", { class: "field", style: "flex:1 1 0; min-width:0" }, ["Hráč " + (i+1), nameInp]));
+    cell.appendChild(el("label", { class: "field", style: "flex:1 1 0; min-width:0" }, ["Tým", teamInp]));
+    names.appendChild(cell);
   }
   view.appendChild(names);
+  renderWheel(view);
 
   const cta = el("div", { class: "row", style: "margin-top:20px" });
   if (!started) {
     const btn = el("button", null, "Spustit turnaj");
     btn.addEventListener("click", () => {
-      const clean = state.players.map(p => (p || "").trim());
-      if (clean.some(p => !p)) { alert("Vyplň prosím jména všech hráčů."); return; }
-      if (new Set(clean).size !== clean.length) { alert("Jména hráčů se nesmí opakovat."); return; }
-      state.players = clean;
-      state.groupMatches = generateGroupMatches(clean);
+      const cleaned = state.players.map(p => ({
+        name: (p && p.name || "").trim(),
+        team: (p && p.team || "").trim(),
+      }));
+      if (cleaned.some(p => !p.name)) { alert("Vyplň prosím jména všech hráčů."); return; }
+      const names = cleaned.map(p => p.name);
+      if (new Set(names).size !== names.length) { alert("Jména hráčů se nesmí opakovat."); return; }
+      state.players = cleaned;
+      state.groupMatches = generateGroupMatches(names);
       state.phase = "group";
       state.qualifiers = [];
       state.playoff = { qf: [], sf: [], bronze: null, final: null };
@@ -493,10 +662,15 @@ function renderSetup(view) {
     const regen = el("button", { class: "secondary" }, "Vygenerovat rozlosování znovu");
     regen.addEventListener("click", () => {
       if (!confirm("Tímto se vymažou všechny výsledky zápasů ve skupině. Pokračovat?")) return;
-      const clean = state.players.map(p => (p || "").trim());
-      if (clean.some(p => !p)) { alert("Nejdříve vyplň všechna jména hráčů."); return; }
-      state.players = clean;
-      state.groupMatches = generateGroupMatches(clean);
+      const cleaned = state.players.map(p => ({
+        name: (p && p.name || "").trim(),
+        team: (p && p.team || "").trim(),
+      }));
+      if (cleaned.some(p => !p.name)) { alert("Nejdříve vyplň všechna jména hráčů."); return; }
+      const names = cleaned.map(p => p.name);
+      if (new Set(names).size !== names.length) { alert("Jména hráčů se nesmí opakovat."); return; }
+      state.players = cleaned;
+      state.groupMatches = generateGroupMatches(names);
       state.qualifiers = [];
       state.playoff = { qf: [], sf: [], bronze: null, final: null };
       state.champion = null;
@@ -511,6 +685,170 @@ function renderSetup(view) {
   reset.addEventListener("click", resetTournament);
   cta.appendChild(reset);
   view.appendChild(cta);
+}
+
+function renderWheel(view) {
+  const wrap = el("div", { class: "wheel-wrap" });
+  const stage = el("div", { class: "wheel-stage" });
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "wheel-svg");
+  svg.setAttribute("viewBox", "0 0 200 200");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "Kolo štěstí pro losování týmů");
+  svg.style.transform = "rotate(" + wheelState.rotation + "deg)";
+
+  if (wheelState.teams.length) {
+    const n = wheelState.teams.length;
+    const sliceAngle = 360 / n;
+    wheelState.teams.forEach((team, i) => {
+      if (n === 1) {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", "100");
+        circle.setAttribute("cy", "100");
+        circle.setAttribute("r", "94");
+        circle.setAttribute("fill", team.color || WHEEL_COLORS[i % WHEEL_COLORS.length]);
+        circle.setAttribute("stroke", "#18222f");
+        circle.setAttribute("stroke-width", "2");
+        svg.appendChild(circle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", "100");
+        text.setAttribute("y", "100");
+        text.setAttribute("fill", "#fff");
+        text.setAttribute("font-size", "11");
+        text.setAttribute("font-weight", "700");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.textContent = team.name.length > 18 ? team.name.slice(0, 17) + "…" : team.name;
+        svg.appendChild(text);
+        return;
+      }
+      const start = i * sliceAngle;
+      const end = start + sliceAngle;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", wheelSlicePath(100, 100, 94, start, end));
+      path.setAttribute("fill", team.color || WHEEL_COLORS[i % WHEEL_COLORS.length]);
+      path.setAttribute("stroke", "#18222f");
+      path.setAttribute("stroke-width", "2");
+      svg.appendChild(path);
+
+      const labelAngle = start + sliceAngle / 2;
+      const labelPos = wheelPoint(100, 100, Math.min(66, 42 + n * 2), labelAngle);
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", labelPos.x);
+      text.setAttribute("y", labelPos.y);
+      text.setAttribute("fill", "#fff");
+      text.setAttribute("font-size", n > 8 ? "7" : "9");
+      text.setAttribute("font-weight", "700");
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("dominant-baseline", "middle");
+      text.setAttribute("transform", "rotate(" + labelAngle + " " + labelPos.x + " " + labelPos.y + ")");
+      text.textContent = team.name.length > 16 ? team.name.slice(0, 15) + "…" : team.name;
+      svg.appendChild(text);
+    });
+  } else {
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", "100");
+    circle.setAttribute("cy", "100");
+    circle.setAttribute("r", "94");
+    circle.setAttribute("fill", "#1f2b3a");
+    circle.setAttribute("stroke", "#2a3a4d");
+    circle.setAttribute("stroke-width", "2");
+    svg.appendChild(circle);
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", "100");
+    text.setAttribute("y", "100");
+    text.setAttribute("fill", "#9aa7b6");
+    text.setAttribute("font-size", "10");
+    text.setAttribute("font-weight", "700");
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("dominant-baseline", "middle");
+    text.textContent = "Přidej týmy";
+    svg.appendChild(text);
+  }
+
+  stage.appendChild(el("div", { class: "wheel-pointer", "aria-hidden": "true" }));
+  stage.appendChild(svg);
+  stage.appendChild(el("div", { class: "wheel-hub", "aria-hidden": "true" }));
+  wrap.appendChild(stage);
+
+  const side = el("div", { class: "wheel-side" });
+  side.appendChild(el("h3", null, "Kolo štěstí"));
+  side.appendChild(el("div", { class: "sub" },
+    "Přidej týmy, roztoč kolo a vybraný tým se po losování odstraní."));
+
+  const input = el("input", { type: "text", placeholder: "Např. Real Madrid" });
+  const addBtn = el("button", { class: "secondary" }, "Přidat tým");
+  function addFromInput() {
+    if (!wheelAddTeam(input.value)) {
+      showWheelToast(input.value.trim() ? "Tým už je v kole." : "Zadej název týmu.");
+      return;
+    }
+    input.value = "";
+    render();
+  }
+  input.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") addFromInput();
+  });
+  addBtn.addEventListener("click", addFromInput);
+  side.appendChild(el("div", { class: "wheel-form" }, [
+    el("label", { class: "field" }, ["Tým do kola", input]),
+    addBtn,
+  ]));
+
+  const list = el("ul", { class: "wheel-list" });
+  if (wheelState.teams.length) {
+    wheelState.teams.forEach((team, i) => {
+      const remove = el("button", { class: "ghost", type: "button" }, "Smazat");
+      remove.addEventListener("click", () => {
+        wheelRemoveTeam(i);
+        render();
+      });
+      const label = el("span", null, [
+        el("span", { class: "swatch", style: "background:" + (team.color || WHEEL_COLORS[i % WHEEL_COLORS.length]) }),
+        team.name,
+      ]);
+      list.appendChild(el("li", null, [label, remove]));
+    });
+  } else {
+    list.appendChild(el("li", { class: "wheel-empty" }, "Zatím žádné týmy v kole."));
+  }
+  side.appendChild(list);
+
+  const spinBtn = el("button", null, wheelState.spinning ? "Losuji..." : "Roztočit");
+  spinBtn.disabled = wheelState.spinning || wheelState.teams.length < 1;
+  spinBtn.addEventListener("click", wheelSpin);
+  const clearBtn = el("button", { class: "ghost" }, "Vyčistit kolo");
+  clearBtn.disabled = wheelState.spinning || wheelState.teams.length === 0;
+  clearBtn.addEventListener("click", () => {
+    if (!confirm("Smazat všechny týmy z kola?")) return;
+    wheelState.teams = [];
+    wheelState.rotation = 0;
+    saveWheel();
+    render();
+  });
+  side.appendChild(el("div", { class: "wheel-actions" }, [spinBtn, clearBtn]));
+  side.appendChild(el("div", { class: "help" }, "Vybraný tým po animaci zmizí z kola, aby se nemohl vylosovat znovu."));
+
+  wrap.appendChild(side);
+  view.appendChild(wrap);
+}
+
+function wheelPoint(cx, cy, r, angleDeg) {
+  const a = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+}
+
+function wheelSlicePath(cx, cy, r, startAngle, endAngle) {
+  const start = wheelPoint(cx, cy, r, startAngle);
+  const end = wheelPoint(cx, cy, r, endAngle);
+  const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+  return [
+    "M", cx, cy,
+    "L", start.x, start.y,
+    "A", r, r, 0, largeArc, 1, end.x, end.y,
+    "Z",
+  ].join(" ");
 }
 
 function renderSchedule(view) {
@@ -538,17 +876,17 @@ function scheduleMatchCard(m) {
     el("span", { class: "tag" }, "Zápas " + m.id.slice(1)),
     el("span", { class: "pill" }, m.played ? (m.g1 + " : " + m.g2) : "Nadcházející"),
   ]));
-  card.appendChild(el("div", { class: "side" }, [
-    el("span", { class: "name" }, m.p1),
-  ]));
-  card.appendChild(el("div", { class: "side" }, [
-    el("span", { class: "name" }, m.p2),
-  ]));
+  const s1 = el("div", { class: "side" });
+  appendPlayerName(s1, m.p1);
+  card.appendChild(s1);
+  const s2 = el("div", { class: "side" });
+  appendPlayerName(s2, m.p2);
+  card.appendChild(s2);
   return card;
 }
 
 function renderGroup(view) {
-  const standings = computeStandings(state.players, state.groupMatches);
+  const standings = computeStandings(state.players.map(p => p.name), state.groupMatches);
   const playedCount = state.groupMatches.filter(m => m.played).length;
 
   view.appendChild(el("h2", null, "Skupinová fáze"));
@@ -556,12 +894,13 @@ function renderGroup(view) {
   view.appendChild(el("h3", { style: "margin: 6px 0 6px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Tabulka"));
 
   const tbl = el("table");
-  tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
+  tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Tým", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
   const tbody = el("tbody");
   standings.forEach((row, i) => {
     const tr = el("tr", { class: (i < state.playoffConfig.size ? "qualifier " : "") + (i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "") });
     tr.appendChild(el("td", null, String(i+1)));
     tr.appendChild(el("td", { style: "text-align:left; font-weight:600" }, row.p));
+    tr.appendChild(el("td", { style: "text-align:left; color: var(--accent-2); font-size: 12px; text-transform: uppercase; letter-spacing:.03em" }, (getPlayer(row.p) || {}).team || "—"));
     tr.appendChild(el("td", null, String(row.mp)));
     tr.appendChild(el("td", null, String(row.w)));
     tr.appendChild(el("td", null, String(row.d)));
@@ -600,8 +939,12 @@ function groupMatchCard(m) {
 
   const g1 = el("input", { type: "number", min: "0", class: "score", value: m.played ? String(m.g1) : "" });
   const g2 = el("input", { type: "number", min: "0", class: "score", value: m.played ? String(m.g2) : "" });
-  const s1 = el("div", { class: "side" }, [el("span", { class: "name" }, m.p1), g1]);
-  const s2 = el("div", { class: "side" }, [el("span", { class: "name" }, m.p2), g2]);
+  const s1 = el("div", { class: "side" });
+  appendPlayerName(s1, m.p1);
+  s1.appendChild(g1);
+  const s2 = el("div", { class: "side" });
+  appendPlayerName(s2, m.p2);
+  s2.appendChild(g2);
   card.appendChild(s1);
   card.appendChild(s2);
 
@@ -630,7 +973,7 @@ function groupMatchCard(m) {
 
 function renderPlayoff(view) {
   view.appendChild(el("h2", null, "Playoff"));
-  const standings = computeStandings(state.players, state.groupMatches);
+  const standings = computeStandings(state.players.map(p => p.name), state.groupMatches);
   const allPlayed = state.groupMatches.every(m => m.played);
   const canGenerate = standings.length >= 2;
   view.appendChild(el("div", { class: "sub" }, allPlayed
@@ -735,7 +1078,7 @@ function playoffMatchCard(m) {
 
   // Sides
   const s1 = el("div", { class: "side" + (winner === m.a ? " win" : loser === m.a ? " lose" : "") });
-  s1.appendChild(el("span", { class: "name" }, m.a || "Bude určeno"));
+  appendPlayerName(s1, m.a);
   const g1 = el("input", { type: "number", min: "0", class: "score" });
   g1.value = m.played ? String(m.g1) : "";
   g1.disabled = !m.a || !m.b;
@@ -743,7 +1086,7 @@ function playoffMatchCard(m) {
   card.appendChild(s1);
 
   const s2 = el("div", { class: "side" + (winner === m.b ? " win" : loser === m.b ? " lose" : "") });
-  s2.appendChild(el("span", { class: "name" }, m.b || "Bude určeno"));
+  appendPlayerName(s2, m.b);
   const g2 = el("input", { type: "number", min: "0", class: "score" });
   g2.value = m.played ? String(m.g2) : "";
   g2.disabled = !m.a || !m.b;
@@ -847,16 +1190,17 @@ function renderChampion(view) {
   view.appendChild(podium);
 
   // Top-4 summary
-  const standings = computeStandings(state.players, state.groupMatches);
+  const standings = computeStandings(state.players.map(p => p.name), state.groupMatches);
   if (standings.length) {
     view.appendChild(el("h3", { style: "margin-top:24px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Konečné pořadí"));
     const tbl = el("table");
-    tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
+    tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Tým", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
     const tb = el("tbody");
     standings.forEach((r, i) => {
       const tr = el("tr", { class: i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "" });
       tr.appendChild(el("td", null, String(i+1)));
       tr.appendChild(el("td", { style: "text-align:left; font-weight:600" }, r.p));
+      tr.appendChild(el("td", { style: "text-align:left; color: var(--accent-2); font-size: 12px; text-transform: uppercase; letter-spacing:.03em" }, (getPlayer(r.p) || {}).team || "—"));
       tr.appendChild(el("td", null, String(r.mp)));
       tr.appendChild(el("td", null, String(r.w)));
       tr.appendChild(el("td", null, String(r.d)));
