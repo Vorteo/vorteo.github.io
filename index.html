@@ -6,41 +6,84 @@
 <title>FIFA Turnaj</title>
 <style>
   :root {
-    --bg: #0f1722;
-    --panel: #18222f;
-    --panel-2: #1f2b3a;
-    --border: #2a3a4d;
-    --text: #e8eef5;
-    --muted: #9aa7b6;
-    --accent: #c8102e;
-    --accent-2: #ff4d63;
+    --bg: #07140f;
+    --grass: #0f3b25;
+    --grass-2: #155436;
+    --panel: rgba(14, 29, 24, .94);
+    --panel-2: rgba(20, 50, 38, .9);
+    --panel-3: rgba(10, 22, 18, .72);
+    --border: rgba(177, 219, 188, .18);
+    --line: rgba(235, 255, 240, .16);
+    --text: #eef8f0;
+    --muted: #aabdaf;
+    --accent: #d82035;
+    --accent-2: #ff5a66;
+    --lime: #7fdb82;
     --gold: #d4af37;
     --bronze: #cd7f32;
-    --winner: #2a4d2e;
-    --loser: #3a2230;
-    --shadow: 0 2px 8px rgba(0,0,0,.35);
+    --winner: #214f32;
+    --loser: #452532;
+    --shadow: 0 16px 40px rgba(0,0,0,.34);
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+  html, body { margin: 0; padding: 0; min-height: 100%; background: var(--bg); color: var(--text);
     font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body {
+    background:
+      radial-gradient(circle at 50% 18%, rgba(127,219,130,.18), transparent 27%),
+      linear-gradient(90deg, transparent 0 10%, rgba(255,255,255,.045) 10% 10.4%, transparent 10.4% 20%, rgba(255,255,255,.035) 20% 20.4%, transparent 20.4% 30%, rgba(255,255,255,.045) 30% 30.4%, transparent 30.4% 40%, rgba(255,255,255,.035) 40% 40.4%, transparent 40.4% 50%, rgba(255,255,255,.045) 50% 50.4%, transparent 50.4% 60%, rgba(255,255,255,.035) 60% 60.4%, transparent 60.4% 70%, rgba(255,255,255,.045) 70% 70.4%, transparent 70.4% 80%, rgba(255,255,255,.035) 80% 80.4%, transparent 80.4%),
+      linear-gradient(180deg, #082014 0%, #0f3b25 42%, #07140f 100%);
+    background-attachment: fixed;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent calc(50% - 1px), var(--line) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+      radial-gradient(circle at 50% 50%, transparent 0 88px, var(--line) 89px 91px, transparent 92px),
+      linear-gradient(var(--line), var(--line)) center 9% / 34% 2px no-repeat,
+      linear-gradient(var(--line), var(--line)) center 91% / 34% 2px no-repeat;
+    opacity: .56;
+  }
   a { color: var(--accent-2); }
-  .app { max-width: 1100px; margin: 0 auto; padding: 24px 18px 80px; }
-  header.top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
-  header.top h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
-  header.top .ball { width: 28px; height: 28px; border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #fff 0 6px, #000 7px 14px, #fff 15px 22px, #000 23px);
+  .app { position: relative; max-width: 1120px; margin: 0 auto; padding: 24px 18px 80px; }
+  header.top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+    padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px;
+    background: linear-gradient(135deg, rgba(12,35,25,.94), rgba(25,72,48,.88));
     box-shadow: var(--shadow); }
+  header.top h1 { margin: 0; font-size: 23px; letter-spacing: .5px; text-transform: uppercase; }
+  header.top .ball { width: 34px; height: 34px; border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%, #111 0 4px, transparent 5px),
+      radial-gradient(circle at 30% 28%, #fff 0 7px, transparent 8px),
+      conic-gradient(from 18deg, #f7f7f7 0 18%, #101010 18% 30%, #f7f7f7 30% 48%, #101010 48% 61%, #f7f7f7 61% 80%, #101010 80% 91%, #f7f7f7 91%);
+    border: 2px solid rgba(255,255,255,.85);
+    box-shadow: 0 8px 24px rgba(0,0,0,.38); }
   .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;
-    background: var(--panel); padding: 6px; border-radius: 12px; border: 1px solid var(--border); }
+    background: rgba(7,20,15,.78); padding: 6px; border-radius: 12px; border: 1px solid var(--border);
+    box-shadow: 0 10px 28px rgba(0,0,0,.22); backdrop-filter: blur(8px); }
   .tab { flex: 1 1 auto; min-width: 90px; text-align: center; padding: 10px 14px;
     border-radius: 8px; cursor: pointer; color: var(--muted); font-weight: 600; user-select: none;
     border: 1px solid transparent; transition: all .15s ease; }
   .tab:hover { color: var(--text); background: var(--panel-2); }
-  .tab.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .tab.active { color: #fff; background: linear-gradient(180deg, var(--accent-2), var(--accent)); border-color: rgba(255,255,255,.18); }
   .tab.disabled { opacity: .35; cursor: not-allowed; }
-  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
-    box-shadow: var(--shadow); }
-  .panel h2 { margin: 0 0 6px; font-size: 18px; }
+  .panel { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; box-shadow: var(--shadow); backdrop-filter: blur(10px); }
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent 0 49.8%, rgba(255,255,255,.055) 49.8% 50.2%, transparent 50.2%),
+      radial-gradient(circle at 50% 50%, transparent 0 74px, rgba(255,255,255,.045) 75px 77px, transparent 78px);
+    opacity: .7;
+  }
+  .panel > * { position: relative; }
+  .panel h2 { margin: 0 0 6px; font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
   .panel .sub { color: var(--muted); margin-bottom: 18px; }
   /* Sjednocená výška inputů, selectů a tlačítek, aby v .row seděly na jedné lince. */
   :where(input[type="text"], input[type="number"], select, button) {
@@ -53,43 +96,55 @@
   label.field > input,
   label.field > select { width: 100%; }
   input[type="text"], input[type="number"], select {
-    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    background: rgba(6, 20, 14, .64); color: var(--text); border: 1px solid var(--border);
     border-radius: 8px; padding: 0 10px; font: inherit; outline: none; min-width: 0;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
   }
-  input:focus, select:focus { border-color: var(--accent-2); }
+  input:focus, select:focus { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(127,219,130,.12); }
   input.invalid { border-color: var(--accent); background: #2a1820; }
-  button { background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+  button { background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; border: 0; border-radius: 8px;
     padding: 0 16px; font: inherit; font-weight: 600; cursor: pointer; transition: filter .15s;
-    display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
-  button:hover { filter: brightness(1.1); }
-  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
-  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(216,32,53,.18); }
+  button:hover { filter: brightness(1.08); }
+  button.secondary { background: linear-gradient(180deg, rgba(30,76,54,.96), rgba(18,48,35,.96)); color: var(--text); border: 1px solid var(--border);
+    box-shadow: 0 8px 18px rgba(0,0,0,.16); }
+  button.ghost { background: rgba(7,20,15,.42); color: var(--muted); border: 1px solid var(--border); box-shadow: none; }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 6px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 6px;
+    background: rgba(6,20,14,.36); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   th, td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
   th:first-child, td:first-child { text-align: left; }
-  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-  tr.qualifier td { background: rgba(200,16,46,.08); }
+  th { color: #d7eadb; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+    background: rgba(18,62,39,.64); }
+  tr.qualifier td { background: rgba(127,219,130,.075); }
   tr.you td:first-child::before { content: ""; }
   .rank-1 td:first-child { color: var(--gold); font-weight: 700; }
   .rank-2 td:first-child { color: #c0c8d2; font-weight: 700; }
   .rank-3 td:first-child { color: var(--bronze); font-weight: 700; }
   .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
-    background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
+    background: rgba(6,20,14,.6); border: 1px solid var(--border); color: var(--muted); }
   .pill.gold { color: var(--gold); border-color: rgba(212,175,55,.4); }
   .pill.bronze { color: var(--bronze); border-color: rgba(205,127,50,.4); }
   .pill.accent { color: var(--accent-2); border-color: rgba(255,77,99,.4); }
   .pill.team { color: var(--accent-2); border-color: rgba(255,77,99,.4);
     font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
-  .empty { color: var(--muted); padding: 24px 8px; text-align: center; border: 1px dashed var(--border);
-    border-radius: 10px; margin-top: 12px; }
+  .empty { color: var(--muted); padding: 24px 8px; text-align: center; border: 1px dashed var(--line);
+    border-radius: 10px; margin-top: 12px; background: rgba(6,20,14,.32); }
   .matches { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 16px; }
-  .match { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
-  .match .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .match .head .tag { font-size: 11px; color: var(--muted); }
-  .match .side { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .match { position: relative; overflow: hidden; background:
+      linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, transparent 1px 50%, rgba(255,255,255,.045) 50% calc(50% + 1px), transparent calc(50% + 1px)),
+      linear-gradient(180deg, rgba(22,70,45,.86), rgba(10,30,22,.88));
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px; box-shadow: 0 10px 22px rgba(0,0,0,.18); }
+  .match::before { content: ""; position: absolute; inset: 8px; border: 1px solid rgba(255,255,255,.045); border-radius: 7px; pointer-events: none; }
+  .match > * { position: relative; }
+  .match .head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .match .head .tag { font-size: 11px; color: #d7eadb; text-transform: uppercase; letter-spacing: .05em; }
+  .match .side { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 5px 0;
+    background: rgba(6,20,14,.38); border: 1px solid rgba(255,255,255,.055); border-radius: 8px; }
   .match .side .name { flex: 1; font-weight: 600; }
-  .match .side.win .name { color: #b8f0c0; }
+  .match .side.win { border-color: rgba(127,219,130,.38); background: rgba(35,91,52,.48); }
+  .match .side.win .name { color: #c8ffd0; }
   .match .side.lose .name { color: #f0b8c0; opacity: .8; }
   .match .side input.score { width: 64px; height: 32px; text-align: center; font-weight: 700; }
   .match .foot { display: flex; gap: 8px; margin-top: 8px; }
@@ -98,8 +153,10 @@
   .match .extra .row { gap: 8px; }
   .match .extra label { font-size: 12px; color: var(--muted); }
   .match .extra input.score { height: 32px; }
-  .round-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
-    margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .round-title { font-size: 12px; color: #d7eadb; text-transform: uppercase; letter-spacing: .05em;
+    margin: 18px 0 6px; padding: 0 0 5px 24px; border-bottom: 1px solid var(--border); position: relative; }
+  .round-title::before { content: ""; position: absolute; left: 0; top: 2px; width: 14px; height: 14px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #111 0 3px, #fff 4px 8px, #111 9px); border: 1px solid rgba(255,255,255,.7); }
   .round-title:first-child { margin-top: 0; }
   /* Playoff bracket */
   .bracket { display: flex; gap: 18px; align-items: stretch; overflow-x: auto; padding: 8px 4px 18px; }
@@ -107,10 +164,10 @@
   .bracket-col h3 { font-size: 12px; text-align: center; color: var(--muted); text-transform: uppercase; margin: 0 0 6px; letter-spacing: .05em; }
   .seed-pill { font-size: 10px; color: var(--muted); margin-left: 6px; }
   .podium { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
-  .podium .card { padding: 22px; text-align: center; border-radius: 12px; }
-  .podium .gold-card { background: linear-gradient(180deg, rgba(212,175,55,.18), rgba(212,175,55,.05));
+  .podium .card { padding: 22px; text-align: center; border-radius: 12px; box-shadow: 0 14px 30px rgba(0,0,0,.22); }
+  .podium .gold-card { background: linear-gradient(180deg, rgba(212,175,55,.24), rgba(22,70,45,.34));
     border: 1px solid rgba(212,175,55,.5); }
-  .podium .bronze-card { background: linear-gradient(180deg, rgba(205,127,50,.18), rgba(205,127,50,.05));
+  .podium .bronze-card { background: linear-gradient(180deg, rgba(205,127,50,.22), rgba(22,70,45,.32));
     border: 1px solid rgba(205,127,50,.5); }
   .podium .trophy { font-size: 48px; }
   .podium .name { font-size: 22px; font-weight: 700; margin-top: 4px; }
@@ -119,20 +176,30 @@
   .podium .sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
   .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .grid-2 label.field { width: 100%; }
+  .setup-tools { display: grid; gap: 18px; padding: 14px; border: 1px solid var(--border); border-radius: 12px;
+    background:
+      linear-gradient(90deg, transparent 0 49.8%, rgba(255,255,255,.05) 49.8% 50.2%, transparent 50.2%),
+      linear-gradient(180deg, rgba(20,61,40,.54), rgba(7,20,15,.28)); }
+  .setup-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--border); }
+  .setup-actions button { min-width: 150px; }
   /* Wheel of fortune */
   .wheel-wrap { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 24px;
-    align-items: start; margin-top: 22px; padding-top: 22px; border-top: 1px dashed var(--border); }
+    align-items: start; margin-top: 28px; padding: 22px; border: 1px solid var(--border); border-radius: 12px;
+    background:
+      radial-gradient(circle at 50% 50%, transparent 0 84px, rgba(255,255,255,.045) 85px 87px, transparent 88px),
+      linear-gradient(135deg, rgba(18,62,39,.62), rgba(7,20,15,.42)); }
   .wheel-stage { position: relative; aspect-ratio: 1; max-width: 360px; width: 100%;
     justify-self: center; }
   .wheel-svg { width: 100%; height: 100%; display: block; transform: rotate(0deg);
-    transition: transform 4.8s cubic-bezier(.17,.67,.12,.99); will-change: transform; }
+    transition: transform 7.2s cubic-bezier(.12,.72,.08,1); will-change: transform; }
   .wheel-pointer { position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
     width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent;
-    border-top: 22px solid var(--accent-2); filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); z-index: 2; }
+    border-top: 22px solid #f5f7f0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); z-index: 2; }
   .wheel-hub { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 26px; height: 26px; border-radius: 50%; background: var(--panel);
-    border: 2px solid var(--accent-2); z-index: 1; }
-  .wheel-side h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted);
+    width: 30px; height: 30px; border-radius: 50%; background: var(--panel);
+    border: 3px solid #f5f7f0; box-shadow: 0 4px 14px rgba(0,0,0,.38); z-index: 1; }
+  .wheel-side h3 { margin: 0 0 6px; font-size: 14px; color: #d7eadb;
     text-transform: uppercase; letter-spacing: .04em; }
   .wheel-side .sub { margin-bottom: 14px; }
   .wheel-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px;
@@ -140,7 +207,7 @@
   .wheel-form label.field { min-width: 0; }
   .wheel-form button { min-width: 110px; }
   .wheel-list { list-style: none; padding: 0; margin: 0 0 14px; max-height: 220px; overflow: auto;
-    border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
+    border: 1px solid var(--border); border-radius: 8px; background: rgba(6,20,14,.46); }
   .wheel-list li { display: flex; align-items: center; justify-content: space-between;
     gap: 10px; padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
   .wheel-list li:last-child { border-bottom: 0; }
@@ -151,7 +218,7 @@
   .wheel-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 2px; }
   .wheel-actions button { min-width: 118px; }
   .wheel-toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-20px);
-    background: var(--accent); color: #fff; padding: 12px 18px; border-radius: 10px; font-weight: 700;
+    background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; padding: 12px 18px; border-radius: 10px; font-weight: 700;
     box-shadow: 0 6px 24px rgba(0,0,0,.45); opacity: 0; transition: opacity .25s, transform .25s;
     z-index: 10; pointer-events: none; }
   .wheel-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -163,6 +230,8 @@
     .bracket { flex-direction: column; }
     .bracket-col { min-width: 0; }
     .podium { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .setup-actions button { width: 100%; }
     .wheel-wrap { grid-template-columns: 1fr; gap: 18px; }
     .wheel-form { grid-template-columns: 1fr; }
     .wheel-form button,
@@ -251,7 +320,8 @@ function resetTournament() {
  *  Wheel of fortune
  * ------------------------------------------------------------------ */
 const WHEEL_KEY = "fifa-tournament-wheel-v1";
-const WHEEL_COLORS = ["#c8102e", "#1f6feb", "#2e8b57", "#d4af37", "#7d3c98", "#cd7f32", "#117a65", "#a04000", "#1f3a93", "#76448a"];
+const WHEEL_COLORS = ["#d82035", "#f1c232", "#1f8f55", "#2366d1", "#f47b20", "#8e44ad", "#0f766e", "#f5f7f0", "#7fdb82", "#cd7f32"];
+const WHEEL_SPIN_MS = 7200;
 
 function loadWheel() {
   try {
@@ -314,7 +384,7 @@ function wheelSpin() {
   const desiredNorm = (360 - targetCenter) % 360;
   const currentNorm = ((wheelState.rotation % 360) + 360) % 360;
   const delta = (desiredNorm - currentNorm + 360) % 360;
-  const spins = 5 + Math.floor(Math.random() * 4);
+  const spins = 8 + Math.floor(Math.random() * 5);
   wheelState.rotation += spins * 360 + delta;
   saveWheel();
 
@@ -333,7 +403,7 @@ function wheelSpin() {
     saveWheel();
     render();
     if (winner) showWheelToast("Vybraný tým: " + winner.name);
-  }, 4900);
+  }, WHEEL_SPIN_MS + 120);
 }
 
 /* ------------------------------------------------------------------ *
@@ -361,6 +431,8 @@ function generateGroupMatches(players) {
           round: r + 1,
           p1: a, p2: b,
           g1: null, g2: null,
+          ot1: 0, ot2: 0,
+          penWinner: null,
           played: false,
         });
       }
@@ -379,17 +451,27 @@ function generateGroupMatches(players) {
  * ------------------------------------------------------------------ */
 function computeStandings(players, matches) {
   const table = {};
-  players.forEach(p => { table[p] = { p, mp:0, w:0, d:0, l:0, gf:0, ga:0, gd:0, pts:0 }; });
+  players.forEach(p => { table[p] = { p, mp:0, w:0, otw:0, d:0, otl:0, l:0, gf:0, ga:0, gd:0, pts:0 }; });
   matches.forEach(m => {
     if (!m.played) return;
     const a = table[m.p1], b = table[m.p2];
     if (!a || !b) return;
     a.mp++; b.mp++;
-    a.gf += m.g1; a.ga += m.g2;
-    b.gf += m.g2; b.ga += m.g1;
+    const total1 = (m.g1 || 0) + (m.ot1 || 0);
+    const total2 = (m.g2 || 0) + (m.ot2 || 0);
+    a.gf += total1; a.ga += total2;
+    b.gf += total2; b.ga += total1;
     if (m.g1 > m.g2) { a.w++; a.pts += 3; b.l++; }
     else if (m.g1 < m.g2) { b.w++; b.pts += 3; a.l++; }
-    else { a.d++; b.d++; a.pts += 1; b.pts += 1; }
+    else {
+      if (total1 > total2 || (total1 === total2 && m.penWinner === 1)) {
+        a.otw++; a.pts += 2; b.otl++; b.pts += 1;
+      } else if (total2 > total1 || (total1 === total2 && m.penWinner === 2)) {
+        b.otw++; b.pts += 2; a.otl++; a.pts += 1;
+      } else {
+        a.d++; b.d++; a.pts += 1; b.pts += 1;
+      }
+    }
   });
   Object.values(table).forEach(t => { t.gd = t.gf - t.ga; });
   return Object.values(table).sort((x, y) =>
@@ -557,6 +639,45 @@ function appendPlayerName(parent, name) {
   }
 }
 
+function formatGroupMatchScore(m) {
+  if (!m || !m.played) return "Nadcházející";
+  const total1 = (m.g1 || 0) + (m.ot1 || 0);
+  const total2 = (m.g2 || 0) + (m.ot2 || 0);
+  if (m.g1 === m.g2 && total1 === total2 && m.penWinner) {
+    return total1 + " : " + total2 + " pen.";
+  }
+  if (m.g1 === m.g2) {
+    return total1 + " : " + total2 + " pp";
+  }
+  return m.g1 + " : " + m.g2;
+}
+
+function groupMatchStatus(m) {
+  if (!m.played) return "Čeká se";
+  if (m.g1 === m.g2 && m.penWinner) return "Penalty";
+  if (m.g1 === m.g2) return "Prodloužení";
+  return "Odehráno";
+}
+
+function groupMatchWinner(m) {
+  if (!m || !m.played) return null;
+  if (m.g1 > m.g2) return m.p1;
+  if (m.g2 > m.g1) return m.p2;
+  const total1 = (m.g1 || 0) + (m.ot1 || 0);
+  const total2 = (m.g2 || 0) + (m.ot2 || 0);
+  if (total1 > total2) return m.p1;
+  if (total2 > total1) return m.p2;
+  if (m.penWinner === 1) return m.p1;
+  if (m.penWinner === 2) return m.p2;
+  return null;
+}
+
+function groupMatchLoser(m) {
+  const winner = groupMatchWinner(m);
+  if (!winner) return null;
+  return winner === m.p1 ? m.p2 : m.p1;
+}
+
 function tabEnabled(id) {
   if (id === "setup") return true;
   if (!state.players.length) return false;
@@ -598,6 +719,7 @@ function renderSetup(view) {
   const started = state.players.length > 0;
   view.appendChild(el("h2", null, "Nastavení turnaje"));
   view.appendChild(el("div", { class: "sub" }, "Zvol počet hráčů (4–12), zadej jejich jména a spusť turnaj."));
+  const tools = el("div", { class: "setup-tools" });
   const row = el("div", { class: "row" });
   const countInput = el("input", { type: "number", min: "4", max: "12", value: state.playerCount });
   countInput.addEventListener("change", () => {
@@ -612,9 +734,9 @@ function renderSetup(view) {
     render();
   });
   row.appendChild(el("label", { class: "field", style: "min-width:160px" }, ["Počet hráčů (4–12)", countInput]));
-  view.appendChild(row);
+  tools.appendChild(row);
 
-  const names = el("div", { class: "grid-2", style: "margin-top:18px" });
+  const names = el("div", { class: "grid-2" });
   for (let i = 0; i < state.playerCount; i++) {
     const p = state.players[i] || { name: "", team: "" };
     const nameInp = el("input", { type: "text", placeholder: "Hráč " + (i+1), value: p.name || "" });
@@ -632,10 +754,9 @@ function renderSetup(view) {
     cell.appendChild(el("label", { class: "field", style: "flex:1 1 0; min-width:0" }, ["Tým", teamInp]));
     names.appendChild(cell);
   }
-  view.appendChild(names);
-  renderWheel(view);
+  tools.appendChild(names);
 
-  const cta = el("div", { class: "row", style: "margin-top:20px" });
+  const cta = el("div", { class: "setup-actions" });
   if (!started) {
     const btn = el("button", null, "Spustit turnaj");
     btn.addEventListener("click", () => {
@@ -684,7 +805,9 @@ function renderSetup(view) {
   const reset = el("button", { class: "ghost" }, "Resetovat turnaj");
   reset.addEventListener("click", resetTournament);
   cta.appendChild(reset);
-  view.appendChild(cta);
+  tools.appendChild(cta);
+  view.appendChild(tools);
+  renderWheel(view);
 }
 
 function renderWheel(view) {
@@ -707,7 +830,7 @@ function renderWheel(view) {
         circle.setAttribute("cy", "100");
         circle.setAttribute("r", "94");
         circle.setAttribute("fill", team.color || WHEEL_COLORS[i % WHEEL_COLORS.length]);
-        circle.setAttribute("stroke", "#18222f");
+        circle.setAttribute("stroke", "#0c2319");
         circle.setAttribute("stroke-width", "2");
         svg.appendChild(circle);
 
@@ -728,7 +851,7 @@ function renderWheel(view) {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", wheelSlicePath(100, 100, 94, start, end));
       path.setAttribute("fill", team.color || WHEEL_COLORS[i % WHEEL_COLORS.length]);
-      path.setAttribute("stroke", "#18222f");
+      path.setAttribute("stroke", "#0c2319");
       path.setAttribute("stroke-width", "2");
       svg.appendChild(path);
 
@@ -751,7 +874,7 @@ function renderWheel(view) {
     circle.setAttribute("cx", "100");
     circle.setAttribute("cy", "100");
     circle.setAttribute("r", "94");
-    circle.setAttribute("fill", "#1f2b3a");
+    circle.setAttribute("fill", "#143226");
     circle.setAttribute("stroke", "#2a3a4d");
     circle.setAttribute("stroke-width", "2");
     svg.appendChild(circle);
@@ -874,7 +997,7 @@ function scheduleMatchCard(m) {
   const card = el("div", { class: "match" });
   card.appendChild(el("div", { class: "head" }, [
     el("span", { class: "tag" }, "Zápas " + m.id.slice(1)),
-    el("span", { class: "pill" }, m.played ? (m.g1 + " : " + m.g2) : "Nadcházející"),
+    el("span", { class: "pill" }, formatGroupMatchScore(m)),
   ]));
   const s1 = el("div", { class: "side" });
   appendPlayerName(s1, m.p1);
@@ -894,7 +1017,7 @@ function renderGroup(view) {
   view.appendChild(el("h3", { style: "margin: 6px 0 6px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Tabulka"));
 
   const tbl = el("table");
-  tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Tým", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
+  tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Tým", "Z", "V", "VP", "PP", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
   const tbody = el("tbody");
   standings.forEach((row, i) => {
     const tr = el("tr", { class: (i < state.playoffConfig.size ? "qualifier " : "") + (i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "") });
@@ -903,6 +1026,8 @@ function renderGroup(view) {
     tr.appendChild(el("td", { style: "text-align:left; color: var(--accent-2); font-size: 12px; text-transform: uppercase; letter-spacing:.03em" }, (getPlayer(row.p) || {}).team || "—"));
     tr.appendChild(el("td", null, String(row.mp)));
     tr.appendChild(el("td", null, String(row.w)));
+    tr.appendChild(el("td", null, String(row.otw || 0)));
+    tr.appendChild(el("td", null, String(row.otl || 0)));
     tr.appendChild(el("td", null, String(row.d)));
     tr.appendChild(el("td", null, String(row.l)));
     tr.appendChild(el("td", null, String(row.gf)));
@@ -913,7 +1038,7 @@ function renderGroup(view) {
   });
   tbl.appendChild(tbody);
   view.appendChild(tbl);
-  view.appendChild(el("div", { class: "help" }, "Do playoff postupuje nejlepších " + state.playoffConfig.size + ". Remízy jsou ve skupině povoleny."));
+  view.appendChild(el("div", { class: "help" }, "Do playoff postupuje nejlepších " + state.playoffConfig.size + ". V = výhra v základní době, VP = výhra po prodloužení/penaltách, PP = prohra po prodloužení/penaltách."));
 
   view.appendChild(el("h3", { style: "margin: 22px 0 6px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Zápasy"));
   if (!state.groupMatches.length) {
@@ -934,19 +1059,58 @@ function groupMatchCard(m) {
   const card = el("div", { class: "match" });
   card.appendChild(el("div", { class: "head" }, [
     el("span", { class: "tag" }, "Zápas " + m.id.slice(1)),
-    el("span", { class: "pill" }, m.played ? "Odehráno" : "Čeká se"),
+    el("span", { class: "pill" }, groupMatchStatus(m)),
   ]));
 
   const g1 = el("input", { type: "number", min: "0", class: "score", value: m.played ? String(m.g1) : "" });
   const g2 = el("input", { type: "number", min: "0", class: "score", value: m.played ? String(m.g2) : "" });
-  const s1 = el("div", { class: "side" });
+  const winner = groupMatchWinner(m);
+  const loser = groupMatchLoser(m);
+  const s1 = el("div", { class: "side" + (winner === m.p1 ? " win" : loser === m.p1 ? " lose" : "") });
   appendPlayerName(s1, m.p1);
   s1.appendChild(g1);
-  const s2 = el("div", { class: "side" });
+  const s2 = el("div", { class: "side" + (winner === m.p2 ? " win" : loser === m.p2 ? " lose" : "") });
   appendPlayerName(s2, m.p2);
   s2.appendChild(g2);
   card.appendChild(s1);
   card.appendChild(s2);
+
+  const extra = el("div", { class: "extra", style: "display:none" });
+  const ot1 = el("input", { type: "number", min: "0", class: "score", value: String(m.ot1 || 0) });
+  const ot2 = el("input", { type: "number", min: "0", class: "score", value: String(m.ot2 || 0) });
+  extra.appendChild(el("div", { class: "row" }, [
+    el("label", { class: "field" }, ["Prodloužení (" + m.p1 + ")", ot1]),
+    el("label", { class: "field" }, ["Prodloužení (" + m.p2 + ")", ot2]),
+  ]));
+
+  const penRow = el("div", { class: "row", style: "margin-top:6px; display:none" });
+  const penA = el("label", null, [el("input", { type: "radio", name: "group-pen-" + m.id, value: "1" }), " Penalty: " + m.p1]);
+  const penB = el("label", null, [el("input", { type: "radio", name: "group-pen-" + m.id, value: "2" }), " Penalty: " + m.p2]);
+  if (m.penWinner === 1) penA.firstChild.checked = true;
+  if (m.penWinner === 2) penB.firstChild.checked = true;
+  penRow.appendChild(penA);
+  penRow.appendChild(penB);
+  extra.appendChild(penRow);
+  card.appendChild(extra);
+
+  function maybeShowGroupExtra() {
+    const v1 = parseScoreInput(g1.value);
+    const v2 = parseScoreInput(g2.value);
+    if (!Number.isFinite(v1) || !Number.isFinite(v2) || v1 !== v2) {
+      extra.style.display = "none";
+      return false;
+    }
+    extra.style.display = "block";
+    const o1 = parseScoreInput(ot1.value);
+    const o2 = parseScoreInput(ot2.value);
+    penRow.style.display = Number.isFinite(o1) && Number.isFinite(o2) && o1 === o2 ? "flex" : "none";
+    return true;
+  }
+  g1.addEventListener("input", maybeShowGroupExtra);
+  g2.addEventListener("input", maybeShowGroupExtra);
+  ot1.addEventListener("input", maybeShowGroupExtra);
+  ot2.addEventListener("input", maybeShowGroupExtra);
+  if (m.played) maybeShowGroupExtra();
 
   const save = el("button", null, m.played ? "Aktualizovat" : "Uložit výsledek");
   const clr  = el("button", { class: "ghost" }, "Smazat");
@@ -956,16 +1120,37 @@ function groupMatchCard(m) {
   save.addEventListener("click", () => {
     const v1 = parseScoreInput(g1.value);
     const v2 = parseScoreInput(g2.value);
-    [g1, g2].forEach(i => i.classList.remove("invalid"));
-    if (v1 == null || v2 == null) {
-      [g1, g2].forEach(i => { if (parseScoreInput(i.value) == null) i.classList.add("invalid"); });
+    [g1, g2, ot1, ot2].forEach(i => i.classList.remove("invalid"));
+    if (!Number.isFinite(v1) || !Number.isFinite(v2)) {
+      [g1, g2].forEach(i => { if (!Number.isFinite(parseScoreInput(i.value))) i.classList.add("invalid"); });
       return;
     }
-    m.g1 = v1; m.g2 = v2; m.played = true;
+    m.g1 = v1; m.g2 = v2;
+    if (v1 === v2) {
+      const o1 = parseScoreInput(ot1.value);
+      const o2 = parseScoreInput(ot2.value);
+      if (!Number.isFinite(o1) || !Number.isFinite(o2)) {
+        [ot1, ot2].forEach(i => { if (!Number.isFinite(parseScoreInput(i.value))) i.classList.add("invalid"); });
+        return;
+      }
+      m.ot1 = o1; m.ot2 = o2;
+      const total1 = v1 + o1;
+      const total2 = v2 + o2;
+      if (total1 === total2) {
+        const r = card.querySelector('input[name="group-pen-' + m.id + '"]:checked');
+        if (!r) { alert("Pokud prodloužení nerozhodne, je nutné vybrat vítěze penalty."); return; }
+        m.penWinner = parseInt(r.value, 10);
+      } else {
+        m.penWinner = null;
+      }
+    } else {
+      m.ot1 = 0; m.ot2 = 0; m.penWinner = null;
+    }
+    m.played = true;
     saveState(); render();
   });
   clr.addEventListener("click", () => {
-    m.g1 = null; m.g2 = null; m.played = false;
+    m.g1 = null; m.g2 = null; m.ot1 = 0; m.ot2 = 0; m.penWinner = null; m.played = false;
     saveState(); render();
   });
   return card;
@@ -1194,7 +1379,7 @@ function renderChampion(view) {
   if (standings.length) {
     view.appendChild(el("h3", { style: "margin-top:24px; font-size:14px; color: var(--muted); text-transform: uppercase; letter-spacing:.05em;" }, "Konečné pořadí"));
     const tbl = el("table");
-    tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Tým", "Z", "V", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
+    tbl.appendChild(el("thead", null, el("tr", null, ["#", "Hráč", "Tým", "Z", "V", "VP", "PP", "R", "P", "VG", "IG", "RG", "Body"].map(h => el("th", null, h)))));
     const tb = el("tbody");
     standings.forEach((r, i) => {
       const tr = el("tr", { class: i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "" });
@@ -1203,6 +1388,8 @@ function renderChampion(view) {
       tr.appendChild(el("td", { style: "text-align:left; color: var(--accent-2); font-size: 12px; text-transform: uppercase; letter-spacing:.03em" }, (getPlayer(r.p) || {}).team || "—"));
       tr.appendChild(el("td", null, String(r.mp)));
       tr.appendChild(el("td", null, String(r.w)));
+      tr.appendChild(el("td", null, String(r.otw || 0)));
+      tr.appendChild(el("td", null, String(r.otl || 0)));
       tr.appendChild(el("td", null, String(r.d)));
       tr.appendChild(el("td", null, String(r.l)));
       tr.appendChild(el("td", null, String(r.gf)));
